@@ -9,25 +9,25 @@
         font-family: Arial, sans-serif;
         margin: 0;
         padding: 0;
-        position: relative;
-        height: 100vh; 
-        overflow-x: hidden; 
+        position: relative; /* To position the pseudo-element relative to the body */
+        height: 100vh; /* Ensure the body takes full viewport height */
+        overflow-x: hidden; /* Prevent horizontal scroll */
       }
 
       body::after {
-        content: ""; 
+        content: ""; /* Creates an empty content for the pseudo-element */
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%; 
-        height: 100%;
-        background-image: url("{{ url_for('static', filename='mnnit.jpeg') }}"); 
-        background-size: cover; 
-        background-position: center center; 
-        background-attachment: fixed; 
-        background-repeat: no-repeat; 
-        opacity: 0.4; 
-        z-index: -1;
+        width: 100%; /* Ensure the pseudo-element covers the full width */
+        height: 100%; /* Ensure the pseudo-element covers the full height */
+        background-image: url("{{ url_for('static', filename='mnnit.jpeg') }}"); /* Corrected image path */
+        background-size: cover; /* Cover the entire background */
+        background-position: center center; /* Ensure it is centered */
+        background-attachment: fixed; /* Keeps the image fixed during scrolling */
+        background-repeat: no-repeat; /* Prevents repeating the image */
+        opacity: 0.4; /* Set the opacity of the image */
+        z-index: -1; /* Ensure the background image stays behind the content */
       }
 
       h1 {
@@ -66,8 +66,8 @@
       .container {
         max-width: 900px;
         margin: 0 auto;
-        position: relative;
-        z-index: 1; 
+        position: relative; /* Ensure the content is above the overlay */
+        z-index: 1; /* Ensure the content stays above the background */
       }
 
       .button {
@@ -92,6 +92,7 @@
         >Create New Batch</a
       >
       <a href="{{ url_for('manage_classrooms') }}" class="button">Add Classroom</a>
+      <a href="{{ url_for('manage_labs') }}" class="button">Add Lab</a>
 
       <h2>Existing Batches:</h2>
       <ul>
@@ -101,14 +102,14 @@
             >{{ batch.name }}</a
           >
           |
-          <a href="{{ url_for('download_timetable', batch_id=batch.id) }}"
+          <a href="{{ url_for('select_batches') }}"
             >Download TimeTable</a
           >
         </li>
         {% endfor %}
       </ul>
 
-      <a href="{{ url_for('download_all_batches') }}" class="button"
+      <a href="{{ url_for('select_batches') }}" class="button"
         >Download All Batches Timetable</a
       >
     </div>
