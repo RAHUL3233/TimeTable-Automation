@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,9 +17,9 @@
 
         th, td {
             border: 1px solid black;
-            padding: 15px;  
+            padding: 15px;  /* Increased padding for better spacing */
             text-align: center;
-            min-height: 50px;  
+            min-height: 50px;  /* Ensures that cells have a minimum height */
         }
 
         th {
@@ -28,11 +27,11 @@
         }
 
         td {
-            vertical-align: middle; 
+            vertical-align: middle;  /* Centers the content vertically */
         }
 
         tr td:first-child {
-            font-weight: bold;  
+            font-weight: bold;  /* Time column is bold */
         }
 
         h1, h2 {
@@ -85,7 +84,6 @@
         }
     </style>
 </head>
-
 <body>
     <h1>Manage Batch - {{ batch.name }}</h1>
     
@@ -104,8 +102,16 @@
         <label for="professor_name">Professor Name:</label>
         <input type="text" id="professor_name" name="professor_name" required>
 
+        <label for="priority_day">Priority Day:</label>
+        <input type="checkbox" id="priorityCheckboxday" name="priority_day" onchange="togglePriorityTypeday()">
+
+        <label for="priority_day_type">Priority Shift:</label>
+        <input type="checkbox" id="priorityCheckboxid" name="priority_day_type" onchange="togglePriorityTypeid()">
+
         <label for="priority">Priority Course:</label>
         <input type="checkbox" id="priorityCheckbox" name="priority" onchange="togglePriorityType()">
+
+
 
         <!-- Priority Type Dropdown -->
         <div id="priorityType" style="display: none;">
@@ -114,6 +120,28 @@
                 <option value="2-hour consecutive">Consecutive 2 hours</option>
                 <option value="2-1-1">2-1-1 Hours Split</option>
                 <option value="2-1">2-1 Hours Split</option>
+            </select>
+        </div>
+
+        <!-- Priority Day Type Dropdown -->
+        <div id="priority_shift_type" style="display: none;">
+            <label for="priority_shift_type">Priority Shift:</label>
+            <select name="priority_shift_type" id="priority_shift_type">
+                <option value="first_half">First Half</option>
+                <option value="second_half">Second Half</option>
+            </select>
+        </div>
+
+
+        <!-- Priority Day Type Dropdown -->
+        <div id="priority_day_type" style="display: none;">
+            <label for="priority_day_type">Priority Day:</label>
+            <select name="priority_day_type" id="priority_day_type">
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
             </select>
         </div>
 
@@ -150,6 +178,20 @@
         function togglePriorityType() {
             const priorityCheckbox = document.getElementById("priorityCheckbox");
             const priorityTypeDiv = document.getElementById("priorityType");
+            priorityTypeDiv.style.display = priorityCheckbox.checked ? "block" : "none";
+        }
+    </script>
+    <script>
+        function togglePriorityTypeid() {
+            const priorityCheckbox = document.getElementById("priorityCheckboxid");
+            const priorityTypeDiv = document.getElementById("priority_shift_type");
+            priorityTypeDiv.style.display = priorityCheckbox.checked ? "block" : "none";
+        }
+    </script>
+    <script>
+        function togglePriorityTypeday() {
+            const priorityCheckbox = document.getElementById("priorityCheckboxday");
+            const priorityTypeDiv = document.getElementById("priority_day_type");
             priorityTypeDiv.style.display = priorityCheckbox.checked ? "block" : "none";
         }
     </script>
