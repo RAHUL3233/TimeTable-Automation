@@ -1,18 +1,42 @@
 <!-- templates/create_batch.html -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Batch</title>
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create New Batch</title>
+    <style>
+      .button {
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        margin-top: 20px;
+      }
+      .buttons {
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #f2f4f5;
+        color: black;
+        border-radius: 5px;
+        text-decoration: none;
+        margin-top: 20px;
+      }
+      .button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
     <h1>Create New Batch</h1>
     <form method="POST">
-        <label for="name">Batch Name:</label>
-        <input type="text" id="name" name="name" required>
-        <button type="submit">Create Batch</button>
+      <label for="name" class="buttons">Batch Name:</label>
+      <input type="text" id="name" name="name" class="buttons" required />
+      <button type="submit" class="button">Create Batch</button>
     </form>
-    <a href="{{ url_for('index') }}">Back to Home</a>
-</body>
+    <!-- <a href="{{ url_for('index') }}">Back to Home</a> -->
+    <a href="{{ url_for('index') }}" class="button">Back to Home</a>
+  </body>
 </html>
