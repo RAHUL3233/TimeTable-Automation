@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TimeTable Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        position: relative;
+        height: 100vh; 
+        overflow-x: hidden; 
+      }
+
+      body::after {
+        content: ""; 
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%; 
+        height: 100%;
+        background-image: url("{{ url_for('static', filename='mnnit.jpeg') }}"); 
+        background-size: cover; 
+        background-position: center center; 
+        background-attachment: fixed; 
+        background-repeat: no-repeat; 
+        opacity: 0.4; 
+        z-index: -1;
+      }
+
+      h1 {
+        font-family: Arial, sans-serif;
+        color: #333;
+        margin: auto;
+        text-align: center;
+      }
+
+      a {
+        text-decoration: none;
+        color: #007bff;
+      }
+
+      a:hover {
+        text-decoration: underline;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        background-color: #fff;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      li a {
+        margin-right: 15px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1; 
+      }
+
+      .button {
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        margin-top: 20px;
+      }
+
+      .button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>TimeTable Management</h1>
+      <a href="{{ url_for('create_batch') }}" class="button"
+        >Create New Batch</a
+      >
+      <a href="{{ url_for('manage_classrooms') }}" class="button">Add Classroom</a>
+
+      <h2>Existing Batches:</h2>
+      <ul>
+        {% for batch in batches %}
+        <li>
+          <a href="{{ url_for('manage_batch', batch_id=batch.id) }}"
+            >{{ batch.name }}</a
+          >
+          |
+          <a href="{{ url_for('download_timetable', batch_id=batch.id) }}"
+            >Download TimeTable</a
+          >
+        </li>
+        {% endfor %}
+      </ul>
+
+      <a href="{{ url_for('download_all_batches') }}" class="button"
+        >Download All Batches Timetable</a
+      >
+    </div>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+
+<form method="POST">
+  <input type="text" name="name" placeholder="Classroom Name" required>
+  <input type="number" name="capacity" placeholder="Capacity" required>
+  <button type="submit">Add Classroom</button>
+</form>
+
+<table>
+  <tr>
+      <th>Name</th>
+      <th>Capacity</th>
+  </tr>
+  {% for classroom in classrooms %}
+  <tr>
+      <td>{{ classroom.name }}</td>
+      <td>{{ classroom.capacity }}</td>
+  </tr>
+  {% endfor %}
+</table>
