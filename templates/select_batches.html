@@ -1,1 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Batches</title>
+</head>
+<body>
+    <h1>Select Batches to Generate Timetables</h1>
+    <form action="/download-timetable" method="POST">
+        <fieldset>
+            <legend>Batches</legend>
+            {% for batch in batches %}
+                <div>
+                    <input type="checkbox" id="batch_{{ batch.id }}" name="batch_ids[]" value="{{ batch.id }}">
+                    <label for="batch_{{ batch.id }}">{{ batch.name }}</label>
+                </div>
+            {% endfor %}
+        </fieldset>
+        <button type="submit">Generate Timetables</button>
+    </form>
+</body>
+</html>
 
