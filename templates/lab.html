@@ -1,1 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Labs</title>
+    <style>
+      .button {
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #007bff;
+        color: white;
+        border-radius: 5px;
+        text-decoration: none;
+        margin-top: 20px;
+      }
+      .buttons {
+        display: inline-block;
+        padding: 10px 15px;
+        background-color: #f2f4f5;
+        color: black;
+        border-radius: 5px;
+        text-decoration: none;
+        margin-top: 20px;
+      }
+      .button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <form method="POST">
+      <input type="text" name="lab_name" placeholder="Lab Name" class="buttons" required />
+      <input
+        type="number"
+        name="lab_capacity"
+        placeholder="Capacity"
+        class="buttons"
+        required
+      />
+      <button type="submit" class="button">Add labs</button>
+    </form>
+    <br />
+    <table>
+      <tr>
+        <th>Name</th>
+        <th>Capacity</th>
+      </tr>
+      {% for lab in labs %}
+      <tr>
+        <td>{{ lab.name }}</td>
+        <td>{{ lab.capacity }}</td>
+      </tr>
+      {% endfor %}
+      <a href="{{ url_for('index') }}" class="button">Back to Home</a>
+    </table>
+  </body>
+</html>
 
