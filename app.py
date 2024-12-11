@@ -27,6 +27,11 @@ class Classroom(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     capacity = db.Column(db.Integer, nullable=False)
 
+class Lab(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    capacity = db.Column(db.Integer, nullable=False)
+
 class Batch(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False)
@@ -36,7 +41,7 @@ class Course(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     credits = db.Column(db.Integer, nullable=False)
     is_lab = db.Column(db.Boolean, default=False)
-    priority = db.Column(db.Boolean, default=False)  # Make sure this line is present
+    priority = db.Column(db.Boolean, default=False)
 
 class Professor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -50,6 +55,7 @@ class Schedule(db.Model):
     day = db.Column(db.Integer, nullable=False)  # 0-4 for Monday-Friday
     slot = db.Column(db.Integer, nullable=False)  # 0-8 for time slots
     classroom_id = db.Column(db.Integer, db.ForeignKey('classroom.id'), nullable=True)
+    lab_id= db.Column(db.Integer, db.ForeignKey('lab.id'), nullable=True)
 
 # roomallotment 
 def find_available_classroom(day, slot):
@@ -61,6 +67,32 @@ def find_available_classroom(day, slot):
         if not existing_schedule:
             return classroom
     return None
+
+def find_available_lab(day, slot):
+    all_classrooms = Lab.query.all()
+    for lab in all_classrooms:
+        # Check the current slot
+        current_schedule = Schedule.query.filter_by(
+            classroom_id=lab.id, day=day, slot=slot
+        ).first()
+        
+        # Check the next slot
+        next_slot = Schedule.query.filter_by(
+            classroom_id=lab.id, day=day, slot=slot + 1
+        ).first()
+        
+        # Check the slot after next
+        next_next_slot = Schedule.query.filter_by(
+            classroom_id=lab.id, day=day, slot=slot + 2
+        ).first()
+        
+        # If all three slots are free, return the lab
+        if not current_schedule and not next_slot and not next_next_slot:
+            return lab
+
+    # If no lab is available for all three slots
+    return None
+
 
 # Helper function to check if a slot is available
 def is_slot_available(batch_id, professor_id, day, slot, is_lab=False):
@@ -90,101 +122,86 @@ def is_slot_available(batch_id, professor_id, day, slot, is_lab=False):
 
 
 
+
+
+
 # excel code
 
-def merge_excel_files():
+def download_excel_files():
     # Create a new workbook to store the merged result
-    merged_wb = openpyxl.Workbook()
-    merged_ws = merged_wb.active
-    merged_ws.title = "Merged Timetables"
+    batches = Batch.query.all()  # Retrieve all batches from the database
     
-    batches = Batch.query.all()  # Get all batches from the database
-    row_offset = 0  # This will be used to track where to place each batch's data
-    
-    # Define time slots
-    time_slots = ["08:00 AM - 09:00 AM", "09:00 AM - 10:00 AM", "10:00 AM - 11:00 AM",
-                  "11:00 AM - 12:00 PM", "12:00 PM - 01:00 PM", "01:00 PM - 02:00 PM",
-                  "02:00 PM - 03:00 PM", "03:00 PM - 04:00 PM", "04:00 PM - 05:00 PM"]
-    
+    # Loop through each batch and generate Excel
     for batch in batches:
-        excel_path = generate_excel(batch.id)  # Generate each batch's Excel file
-        wb = openpyxl.load_workbook(excel_path)  # Load the batch's Excel file
-        ws = wb.active  # Access the active sheet
-        
-        # Create a new sheet in the merged workbook for this batch
-        batch_sheet = merged_wb.create_sheet(title=f"Batch {batch.id}")
-        
-        # Copy header time slots
-        for col_index, time_slot in enumerate(time_slots, start=1):
-            col_letter = get_column_letter(col_index)
-            batch_sheet[f"{col_letter}1"] = time_slot
-            batch_sheet[f"{col_letter}1"].font = Font(size=12, bold=True)
-        
-        # Copy content from the batch's Excel file to the merged workbook
-        for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
-            for col_index, cell in enumerate(row, start=1):
-                batch_sheet.cell(row=row_offset + cell.row, column=col_index, value=cell.value)
-        
-        row_offset += ws.max_row + 2  # Add some space between batches (extra row to separate)
-    
-    # Save the merged workbook to a file
-    merged_excel_path = r"D:\New folder (2)\timetables\merged_batches.xlsx"
-    merged_wb.save(merged_excel_path)  # Save the merged Excel workbook
-    
-    return merged_excel_path  # Return the path of the merged Excel file
+        batch_id = batch.id
+        generate_excel(batch_id)
 
+def generate_excel(batch_ids):
+    # Fetch the batches based on provided IDs
+    selected_batches = Batch.query.filter(Batch.id.in_(batch_ids)).all()
+    if not selected_batches:
+        return "No valid batches found for the provided IDs."
 
-def generate_excel(batch_id):
-    batch = Batch.query.get(batch_id)
-    schedules = Schedule.query.filter_by(batch_id=batch_id).all()
-
-    # Time slots from 8 AM to 6 PM (10 slots)
     time_slots = [
         "08:00 AM - 09:00 AM", "09:00 AM - 10:00 AM", "10:00 AM - 11:00 AM",
         "11:00 AM - 12:00 PM", "12:00 PM - 01:00 PM", "01:00 PM - 02:00 PM",
         "02:00 PM - 03:00 PM", "03:00 PM - 04:00 PM", "04:00 PM - 05:00 PM", "05:00 PM - 06:00 PM"
     ]
-    
-    # Initialize the timetable with empty values ("-")
-    timetable = [["-" for _ in range(10)] for _ in range(5)]  # 5 days, 10 time slots per day
-    
-    # Fill in the timetable based on schedules
-    for schedule in schedules:
-        course = Course.query.get(schedule.course_id)
-        professor = Professor.query.get(schedule.professor_id)
-        classroom= Classroom.query.get(schedule.classroom_id)
-        timetable[schedule.day][schedule.slot] = f"{course.name}({professor.name}), Room: {classroom.name}"
-        
-
-    # Create a new Excel workbook and sheet
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = f"Batch {batch_id}"
-
-    # Set the title row
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-    
-    # Set header row
-    ws['A1'] = f"Timetable for Batch: {batch.name}"
-    ws['A1'].font = Font(size=14, bold=True)
-    ws.merge_cells('A1:K1')  # Merge columns to fit time slots
 
-    # Adding day and time slot headers
-    ws['A2'] = "Day"
-    for col_index, time_slot in enumerate(time_slots, start=2):
-        col_letter = get_column_letter(col_index)
-        ws[f'{col_letter}2'] = time_slot
+    excel_paths = []  # To store the paths of generated Excel files
+    timetable = [[" " for _ in range(10)] for _ in range(5)]
+    for batch in selected_batches:
+        # Initialize the timetable with empty values
+        
+        schedules = Schedule.query.filter_by(batch_id=batch.id).all()
 
-    # Filling in the timetable data
-    for day_index, day_name in enumerate(days):
-        ws[f"A{day_index + 3}"] = day_name
-        for slot_index, slot_content in enumerate(timetable[day_index]):
-            col_letter = get_column_letter(slot_index + 2)
-            ws[f"{col_letter}{day_index + 3}"] = slot_content
+        # Fill in the timetable based on schedules
+        for schedule in schedules:
+            course = Course.query.get(schedule.course_id)
+            professor = Professor.query.get(schedule.professor_id)
+            classroom = Classroom.query.get(schedule.classroom_id)
+            lab = Lab.query.get(schedule.lab_id)
+            entry = f"{course.name} ({professor.name})"
+            if lab:
+                entry += f", {lab.name}"
+            if classroom:
+                entry += f" {classroom.name}"
+            timetable[schedule.day][schedule.slot] += "\n" + entry
 
-    # Save the Excel file to a path
-    excel_path = f"D:/New folder (2)/timetables/batch_{batch_id}.xlsx"
+     # Create a new Excel workbook and sheet
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"TimeTable"
+
+        # Set the title row
+        days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+        
+        # Set header row
+        ws['A1'] = f"Timetable for Batch: {batch.name}"
+        ws['A1'].font = Font(size=14, bold=True)
+        ws.merge_cells('A1:K1')  # Merge columns to fit time slots
+
+        # Adding day and time slot headers
+        ws['A2'] = "Day"
+        for col_index, time_slot in enumerate(time_slots, start=2):
+            col_letter = get_column_letter(col_index)
+            ws[f'{col_letter}2'] = time_slot
+
+        # Filling in the timetable data
+        for day_index, day_name in enumerate(days):
+            ws[f"A{day_index + 3}"] = day_name
+            for slot_index, slot_content in enumerate(timetable[day_index]):
+                col_letter = get_column_letter(slot_index + 2)
+                ws[f"{col_letter}{day_index + 3}"] = slot_content
+
+        # Save the Excel file to a path
+    # excel_path = f"C:\Users\ASUS\Downloads\Time-Table-project (8)\Time-Table-project/timetables/batch_{batch.id}.xlsx"
+    excel_path = "C:\\Users\\ASUS\\Downloads\\Time-Table-project (8)\\Time-Table-project\\timetables\\batch_{batch.id}.xlsx"
+
+
     wb.save(excel_path)
+        
 
     return excel_path
 
@@ -195,6 +212,28 @@ def generate_excel(batch_id):
 def index():
     batches = Batch.query.all()
     return render_template('index.html', batches=batches)
+
+@app.route('/select-batches', methods=['GET'])
+def select_batches():
+    # Fetch all batches from the database
+    batches = Batch.query.all()
+    return render_template('select_batches.html', batches=batches)
+
+@app.route('/download-timetable', methods=['POST'])
+def download_timetable():
+    # Get the selected batch IDs from the form
+    selected_batch_ids = request.form.getlist('batch_ids[]')
+    if not selected_batch_ids:
+        return "No batches selected. Please select at least one batch."
+
+    # Generate timetables for the selected batches
+    excel_path = generate_excel(selected_batch_ids)
+
+    if os.path.exists(excel_path):
+        return send_file(excel_path, as_attachment=True)
+    else:
+        return "File not found", 404
+
 
 @app.route('/create_batch', methods=['GET', 'POST'])
 def create_batch():
@@ -211,31 +250,6 @@ def create_batch():
         return redirect(url_for('index'))
     return render_template('create_batch.html')
 # comment here caution
-
-    # excel route
-
-@app.route('/download_timetable/<int:batch_id>')
-def download_timetable(batch_id):
-    print(batch_id)
-    excel_path = generate_excel(batch_id)  # Generate and save the Excel file
-
-    # Ensure the Excel file exists before sending it
-    if os.path.exists(excel_path):
-        return send_file(excel_path, as_attachment=True)
-    else:
-        return "File not found", 404
-
-@app.route('/download_all_batches')
-def download_all_batches():
-    # Merge all batches' Excel files into one
-    merged_excel_path = merge_excel_files()  # This function merges all batch Excel files
-    # Ensure the merged Excel file exists before sending it
-    if os.path.exists(merged_excel_path):
-        return send_file(merged_excel_path, as_attachment=True)
-    else:
-        return "File not found", 404
-    
-# excel route end
 
 # classroom route
 @app.route('/classrooms', methods=['GET', 'POST'])
@@ -254,6 +268,25 @@ def manage_classrooms():
         return redirect(url_for('manage_classrooms'))
     classrooms = Classroom.query.all()
     return render_template('classrooms.html', classrooms=classrooms)
+
+@app.route('/labs', methods=['GET', 'POST'])
+def manage_labs():
+    if request.method == 'POST':
+        lab_name = request.form['lab_name']
+        lab_capacity = int(request.form['lab_capacity'])
+        new_lab = Lab(name=lab_name, capacity=lab_capacity)
+        db.session.add(new_lab)
+        try:
+            db.session.commit()
+            flash('Lab added successfully', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding lab: {e}', 'error')
+        return redirect(url_for('manage_labs'))
+    
+    labs = Lab.query.all()
+    return render_template('labs.html', labs=labs)
+
 # classroom route end
 
 @app.route('/batch/<int:batch_id>', methods=['GET', 'POST'])
@@ -265,6 +298,11 @@ def manage_batch(batch_id):
         is_lab = 'is_lab' in request.form
         priority = 'priority' in request.form
         priority_type = request.form.get('priority_type')  # Get the priority type
+        priority_shift='priority_shift' in request.form
+        priority_shift_type=request.form.get('priority_shift_type')
+        priority_day='priority_day' in request.form
+        priority_day_type=request.form.get('priority_day_type')
+        
 
         professor_name = request.form['professor_name']
         course = Course.query.filter_by(name=course_name).first()
@@ -285,6 +323,15 @@ def manage_batch(batch_id):
             return redirect(url_for('manage_batch', batch_id=batch_id))
 
         # Schedule the course based on priority type
+        day_map = {
+            "Monday": 0,
+            "Tuesday": 1,
+            "Wednesday": 2,
+            "Thursday": 3,
+            "Friday": 4
+        }
+        priority_day_index = day_map.get(priority_day_type, -1)
+        
         available_slots = []
         if is_lab:
             for day in range(5):
@@ -292,6 +339,34 @@ def manage_batch(batch_id):
                     if is_slot_available(batch.id, professor.id, day, slot, is_lab=True) and slot!=4:
                         available_slots.append((day, slot))
                         break
+        elif priority_day:
+            for day in range(5):  
+                if day == priority_day_type:
+                    for slot in range(9):  
+                        if is_slot_available(batch.id, professor.id, day, slot, is_lab=True) and slot != 4:
+                            available_slots.append((day, slot))  
+                            break  
+                else:
+                    for slot in range(5, 9):  
+                        if is_slot_available(batch.id, professor.id, day, slot, is_lab=True) and slot != 4:
+                            available_slots.append((day, slot))  
+                            break 
+        
+
+                
+        elif priority_shift:
+            if priority_shift_type=="first_half":
+                for day in range(5):
+                    for slot in range(5):
+                        if is_slot_available(batch.id,professor.id,day,slot,is_lab=True) and slot!=4:
+                            available_slots.append((day,slot))
+                            break
+            else:
+                for day in range(5):
+                    for slot in range(5,9):
+                        if is_slot_available(batch.id,professor.id,day,slot,is_lab=True) and slot!=4:
+                            available_slots.append((day,slot))
+                            break
         elif priority:
             if priority_type == "2-hour consecutive":
                 for day in range(5):
@@ -419,8 +494,7 @@ def manage_batch(batch_id):
                         professor_id=professor.id,
                         day=day1,
                         slot=first_slot + offset,
-                        classroom_id= classroom.id
-                
+                        classroom_id= classroom.id              
 
                     )
                     db.session.add(new_schedule)
@@ -455,7 +529,7 @@ def manage_batch(batch_id):
                 flash('Not enough available slots for lab', 'error')
             else:
                 day, start_slot = random.choice(available_slots)
-                classroom = find_available_classroom(day, start_slot)
+                lab = find_available_lab(day, start_slot) 
                 for offset in range(3):
                     new_schedule = Schedule(
                         batch_id=batch.id,
@@ -463,7 +537,7 @@ def manage_batch(batch_id):
                         professor_id=professor.id,
                         day=day,
                         slot=start_slot + offset,
-                        classroom_id = classroom.id
+                        lab_id = lab.id
 
                     )
                     db.session.add(new_schedule)
@@ -506,14 +580,17 @@ def manage_batch(batch_id):
         course = Course.query.get(schedule.course_id)
         professor = Professor.query.get(schedule.professor_id)
         classroom= Classroom.query.get(schedule.classroom_id)
-        timetable[schedule.day][schedule.slot] = f"{course.name}({professor.name}), Room: {classroom.name}"
-
+        lab = Lab.query.get(schedule.lab_id)
+        # Construct the timetable entry dynamically
+        entry = f"{course.name}({professor.name})"
+        if lab is not None:
+            entry += f", {lab.name}"
+        if classroom is not None:
+            entry += f" {classroom.name}"
+        # Assign the constructed entry to the timetable
+        timetable[schedule.day][schedule.slot] = entry
     return render_template('manage_batch.html', batch=batch, timetable=timetable)
-
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     app.run(debug=True)
-
-
-
